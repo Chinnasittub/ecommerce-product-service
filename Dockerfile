@@ -5,9 +5,16 @@ EXPOSE 80
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
-COPY . .
-RUN dotnet restore
-RUN dotnet publish -c Release -o /app/publish
+# ✅ คัดลอก shared-library มาไว้ใน Docker context
+COPY shared-library ./shared-library
+COPY product-service/. .
+
+RUN dotnet restore "ProductService.csproj"
+
+# 🔥 สำคัญ: ลบไฟล์ AssemblyInfo อัตโนมัติ ที่ dotnet สร้างให้
+RUN rm -rf ./obj ./shared-library/obj
+
+RUN dotnet publish "ProductService.csproj" -c Release -o /app/publish
 
 FROM base AS final
 WORKDIR /app
